@@ -5,16 +5,20 @@ import ReCAPTCHA from "react-google-recaptcha";
 const Page = () => {
   const [isToken, setIsToken] = useState(null);
   const [formData, setFormData] = useState({ text: "", email: "" });
-  const recaptchaRef =useRef();
+  const recaptchaRef = useRef();
 
   const onChange = (token) => {
     setIsToken(token);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const recaptchaValue = recaptchaRef.current.getValue();
-    console.log("recaptchaValue", recaptchaValue);
+    const token = recaptchaRef.current.getValue();
+    await fetch("/api/v2captcha", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
   };
   return (
     <section className="w-full h-dvh flex items-center justify-center bg-gray-100">
@@ -29,13 +33,17 @@ const Page = () => {
           type="text"
           placeholder="Your Name"
           value={formData.text}
-          onChange={(e) => setFormData((prev) => ({...prev, text: e.target.value}))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, text: e.target.value }))
+          }
           className="border border-gray-300 p-3 w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
         <input
           type="email"
           value={formData.email}
-          onChange={(e) => setFormData((prev) => ({...prev, email: e.target.value}))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, email: e.target.value }))
+          }
           placeholder="Your Email"
           className="border border-gray-300 p-3 w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
