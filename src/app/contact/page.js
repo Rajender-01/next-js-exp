@@ -1,25 +1,53 @@
 "use client";
-import { useRef, useState } from "react";
-import ReCAPTCHA from "react-google-recaptcha";
+import { useEffect, useRef, useState } from "react";
 
 const Page = () => {
   const [isToken, setIsToken] = useState(null);
   const [formData, setFormData] = useState({ text: "", email: "" });
-  const recaptchaRef = useRef();
+  const [captchaReady, setCaptchaReady] = useState(false);
+  const recaptchaRef = useRef(null);
 
-  const onChange = (token) => {
-    setIsToken(token);
-  };
+  useEffect(() => {
+    // 1️⃣ Create the callback before loading script
+    window.onloadCallback = () => {
+      // 2️⃣ Ensure container exists
+      if (!recaptchaRef.current) return;
+
+      // 3️⃣ Render captcha widget
+      window.grecaptcha.render(recaptchaRef.current, {
+        sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_V2_SITE_KEY,
+        callback: (token) => setIsToken(token),
+      });
+
+      setCaptchaReady(true);
+    };
+
+    // Load Google reCAPTCHA script
+    const script = document.createElement("script");
+    script.src =
+      "https://www.google.com/recaptcha/api.js?render=explicit&onload=onloadCallback";
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = recaptchaRef.current.getValue();
+
+    if (!isToken) {
+      alert("Please complete captcha");
+      return;
+    }
+
     await fetch("/api/v2captcha", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ token: isToken }),
     });
+
+    alert("Form submit");
   };
+
   return (
     <section className="w-full h-dvh flex items-center justify-center bg-gray-100">
       <form
@@ -29,6 +57,7 @@ const Page = () => {
         <h2 className="text-2xl font-semibold text-gray-800 text-center">
           Contact Form
         </h2>
+
         <input
           type="text"
           placeholder="Your Name"
@@ -36,26 +65,29 @@ const Page = () => {
           onChange={(e) =>
             setFormData((prev) => ({ ...prev, text: e.target.value }))
           }
-          className="border border-gray-300 p-3 w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          className="border p-3 rounded-lg"
         />
+
         <input
           type="email"
+          placeholder="Your Email"
           value={formData.email}
           onChange={(e) =>
             setFormData((prev) => ({ ...prev, email: e.target.value }))
           }
-          placeholder="Your Email"
-          className="border border-gray-300 p-3 w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          className="border p-3 rounded-lg"
         />
-        <ReCAPTCHA
-          ref={recaptchaRef}
-          sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_V2_SITE_KEY}
-          onChange={onChange}
-        />
+
+        {!captchaReady && (
+          <p className="text-sm text-gray-500">Captcha loading...</p>
+        )}
+
+        <div ref={recaptchaRef} />
+
         <button
           type="submit"
-          className="px-4 py-3 bg-blue-600 disabled:bg-gray-400 text-white rounded-lg font-medium hover:bg-blue-700 transition"
           disabled={!isToken}
+          className="px-4 py-3 bg-blue-600 disabled:bg-gray-400 text-white rounded-lg"
         >
           Submit
         </button>
