@@ -8,12 +8,12 @@ const Page = () => {
   const recaptchaRef = useRef(null);
 
   useEffect(() => {
-    // 1️⃣ Create the callback before loading script
+    // Create the callback before loading script
     window.onloadCallback = () => {
-      // 2️⃣ Ensure container exists
+      // Ensure container exists
       if (!recaptchaRef.current) return;
 
-      // 3️⃣ Render captcha widget
+      // Render captcha widget
       window.grecaptcha.render(recaptchaRef.current, {
         sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_V2_SITE_KEY,
         callback: (token) => setIsToken(token),
